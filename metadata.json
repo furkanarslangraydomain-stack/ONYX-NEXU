@@ -1,0 +1,6 @@
+{
+  "name": "Ajan Ekosistemi Mimari Yenilemesi",
+  "description": "Dallanma mantığı, otonom test doğrulama ve merkezi supervisor denetimi ile güçlendirilmiş, çökmez yapay zeka ajan altyapısı.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
