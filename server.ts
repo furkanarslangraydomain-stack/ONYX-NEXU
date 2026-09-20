@@ -4,14 +4,14 @@ import { createServer as createViteServer } from "vite";
 import dotenv from "dotenv";
 import { WebSocketServer, WebSocket } from "ws";
 import { createServer } from "http";
-import { Supervisor } from "./src/lib/agents";
+import { AgentRuntime } from "./src/lib/runtime";
 import { getConfiguredProviderCount, getProviderStatuses, getSshStatus, hasFeatureSupport } from "./src/lib/providers";
 
 dotenv.config();
 
 async function startServer() {
   const app = express();
-  const PORT = 3000;
+  const PORT = Number(process.env.PORT || 3000);
   const server = createServer(app);
   const wss = new WebSocketServer({ server });
 
@@ -21,10 +21,17 @@ async function startServer() {
   wss.on("connection", (ws) => {
     console.log("Client connected to status stream");
     let running = false;
-    const supervisor = new Supervisor((data) => {
-      if (ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify(data));
-      }
+    const runtime = new AgentRuntime((data) => {
+      if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(data));
+    });
+
+    ws.on("close", () => {
+      closed = true;
+      runtime.cancel();
+    });
+
+    ws.on("error", (error) => {
+      console.error("[v0] WebSocket error:", error);
     });
 
     ws.on("message", async (message) => {
@@ -38,13 +45,16 @@ async function startServer() {
           running = true;
           console.log("Starting project:", data.payload);
           try {
-            await supervisor.planProject(data.payload.trim());
+            await runtime.execute(data.payload.trim());
           } finally {
             running = false;
           }
         }
       } catch (err) {
-        console.error("WS Message Error:", err);
+        console.error("[v0] WS message error:", err);
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ type: 'ERROR', payload: 'Invalid WebSocket message.' }));
+        }
       }
     });
 
