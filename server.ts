@@ -1,11 +1,11 @@
 import express from "express";
 import path from "path";
 import { createServer as createViteServer } from "vite";
-import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
 import { WebSocketServer, WebSocket } from "ws";
 import { createServer } from "http";
 import { Supervisor } from "./src/lib/agents";
+import { getConfiguredProviderCount, getProviderStatuses, getSshStatus, hasFeatureSupport } from "./src/lib/providers";
 
 dotenv.config();
 
@@ -52,8 +52,18 @@ async function startServer() {
   });
 
   // API Routes
-  app.get("/api/health", (req, res) => {
-    res.json({ status: "ok" });
+  app.get("/api/health", (_req, res) => {
+    res.json({ status: "ok", service: "onyx-nexus", architecture: "modular" });
+  });
+
+  app.get("/api/system-status", (_req, res) => {
+    res.json({
+      status: "ok",
+      providers: getProviderStatuses(),
+      configuredProviderCount: getConfiguredProviderCount(),
+      ssh: getSshStatus(),
+      features: hasFeatureSupport(),
+    });
   });
 
   // Vite middleware for development
