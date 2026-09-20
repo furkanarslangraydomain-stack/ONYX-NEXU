@@ -1,26 +1,18 @@
 import { GoogleGenAI } from "@google/genai";
 
-const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY,
-  httpOptions: {
-    headers: {
-      'User-Agent': 'aistudio-build',
-    }
-  }
-});
+const apiKey = process.env.GEMINI_API_KEY;
+const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
 
-export const getGeminiModel = (model: string = "gemini-3.8-flash") => {
-  return ai.models.getGenerativeModel({ model });
-};
-
-export const generateAgentResponse = async (systemInstruction: string, prompt: string, model: string = "gemini-3.8-flash") => {
+export const generateAgentResponse = async (
+  systemInstruction: string,
+  prompt: string,
+  model = "gemini-2.5-flash",
+) => {
+  if (!ai) throw new Error("GEMINI_API_KEY is not configured");
   const result = await ai.models.generateContent({
     model,
     contents: prompt,
-    config: {
-      systemInstruction,
-      temperature: 0.2,
-    }
+    config: { systemInstruction, temperature: 0.2 },
   });
   return result.text;
 };

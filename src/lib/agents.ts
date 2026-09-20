@@ -1,14 +1,15 @@
 import { GoogleGenAI } from "@google/genai";
-import { AgentRole, Branch, BranchStatus } from "./types";
+import { AgentRole, Branch, BranchStatus } from "../types";
 
-const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY,
-  httpOptions: {
-    headers: {
-      'User-Agent': 'aistudio-build',
-    }
-  }
-});
+const apiKey = process.env.GEMINI_API_KEY;
+const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
+
+const fallbackPlan: Array<{ name: string; role: AgentRole }> = [
+  { name: 'Architecture Review', role: 'Architect' },
+  { name: 'Implementation', role: 'Developer' },
+  { name: 'Quality Gate', role: 'QA' },
+  { name: 'Security Shield', role: 'Sentinel' },
+];
 
 /**
  * Supervisor Agent: The "Master Brain" that oversees all branches.
@@ -30,13 +31,14 @@ export class Supervisor {
     [{"name": "Branch Name", "role": "Role"}]`;
     
     try {
-      const model = ai.models.getGenerativeModel({ model: "gemini-3.8-flash" });
-      const result = await model.generateContent({
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        config: { systemInstruction: systemPrompt, responseMimeType: "application/json" }
-      });
-      
-      const plan = JSON.parse(result.text);
+      const result = ai
+        ? await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: prompt,
+            config: { systemInstruction: systemPrompt, responseMimeType: "application/json" },
+          })
+        : null;
+      const plan = result?.text ? JSON.parse(result.text) : fallbackPlan;
       this.branches = plan.map((b: any, i: number) => ({
         id: `branch-${i}-${Date.now()}`,
         name: b.name,

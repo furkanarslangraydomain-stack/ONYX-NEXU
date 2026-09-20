@@ -4,7 +4,7 @@
 
 export type AgentRole = 'Supervisor' | 'Architect' | 'Developer' | 'QA' | 'Sentinel' | 'Researcher';
 
-export type BranchStatus = 'IDLE' | 'WORKING' | 'TESTING' | 'VALIDATING' | 'MERGED' | 'FAILED';
+export type BranchStatus = 'IDLE' | 'WORKING' | 'RESEARCHING' | 'CODING' | 'TESTING' | 'VALIDATING' | 'MERGED' | 'FAILED';
 
 export interface Branch {
   id: string;
